@@ -46,8 +46,8 @@ def create_sound_keyboard():
 
 def handle_command(message, command_text, action, response_text):
     if message.text == command_text:
-        action()
         bot.send_message(message.chat.id, response_text)
+        action()
 
 
 @bot.message_handler(commands=['start'])
