@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1,
+  user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #020617;
+    --surface: #0f172a;
+    --surface-2: #1e293b;
+    --border: #334155;
+    --fg: #f8fafc;
+    --muted: #94a3b8;
+    --accent: #22c55e;
+    --danger: #ef4444;
+    --radius: 16px;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  body { padding: 12px 12px calc(24px + env(safe-area-inset-bottom)); }
+  .top { display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; }
+  .brand { font-weight: 600; letter-spacing: .2px; }
+  .status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px;
+    color: var(--muted); background: var(--surface); border: 1px solid var(--border);
+    padding: 4px 10px; border-radius: 999px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .status.err .dot { background: var(--danger); }
+  .card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px;
+    margin-bottom: 12px; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .between { justify-content: space-between; }
+  .title { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .value { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .ic { width: 18px; height: 18px; flex: none; }
+  #screen { width: 100%; display: block; border-radius: 10px;
+    border: 1px solid var(--border); background: #000; touch-action: none;
+    cursor: crosshair; }
+  .toolbar { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  button { font: inherit; color: var(--fg); background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 12px; padding: 11px 14px;
+    min-height: 44px; display: inline-flex; align-items: center;
+    justify-content: center; gap: 8px; cursor: pointer;
+    transition: background .18s ease, transform .12s ease, border-color .18s ease; }
+  button:hover { border-color: #475569; }
+  button:active { transform: scale(.97); background: #263041; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.primary { background: var(--accent); color: #052e16; border-color: transparent; }
+  button.danger { color: #fecaca; border-color: #7f1d1d; background: #2a1215; }
+  button.danger:active { background: #3b1519; }
+  .steps { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .steps button { flex: 1; min-width: 60px; }
+  input[type=range] { -webkit-appearance: none; appearance: none; width: 100%;
+    height: 36px; background: transparent; margin: 6px 0 0; }
+  input[type=range]::-webkit-slider-runnable-track { height: 6px;
+    border-radius: 999px; background: var(--surface-2); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none;
+    appearance: none; width: 26px; height: 26px; margin-top: -10px;
+    border-radius: 50%; background: var(--accent); border: 3px solid #052e16;
+    box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+  input[type=range]:focus-visible { outline: 2px solid var(--accent); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .wide { grid-column: 1 / -1; }
+  .type-row { display: flex; gap: 8px; margin-top: 10px; }
+  #typebox { flex: 1; min-width: 0; font: inherit; color: var(--fg);
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 11px 14px; min-height: 44px; }
+  #typebox:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    margin-top: 8px; }
+  .live { display: inline-flex; align-items: center; gap: 8px; color: var(--muted);
+    font-size: 14px; margin-left: auto; }
+  .switch { position: relative; width: 46px; height: 26px; }
+  .switch input { position: absolute; opacity: 0; width: 100%; height: 100%;
+    margin: 0; }
+  .switch span { position: absolute; inset: 0; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 999px; transition: .2s; }
+  .switch span::after { content: ""; position: absolute; top: 2px; left: 2px;
+    width: 20px; height: 20px; border-radius: 50%; background: var(--muted);
+    transition: .2s; }
+  .switch input:checked + span { background: rgba(34,197,94,.25);
+    border-color: var(--accent); }
+  .switch input:checked + span::after { transform: translateX(20px);
+    background: var(--accent); }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></symbol>
+  <symbol id="i-speaker" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/>
+    <path d="M19.1 4.9a10 10 0 0 1 0 14.2"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 5 6 9H2v6h4l5 4z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/>
+  </symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect width="18" height="11" x="3" y="11" rx="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-sleep" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+  <symbol id="i-logoff" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+    <path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+  <symbol id="i-restart" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 12a9 9 0 1 0 2.64-6.36"/><path d="M3 3v6h6"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.77.04"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect width="20" height="14" x="2" y="5" rx="2"/>
+    <path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M8 13h8"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="brand">ControlBot</div>
+  <div class="status" id="status"><span class="dot"></span><span id="statusText">ready</span></div>
+</header>
+
+<section class="card">
+  <img id="screen" alt="screen">
+  <div class="toolbar">
+    <button id="refresh" class="primary">
+      <svg class="ic"><use href="#i-refresh"/></svg>Refresh</button>
+    <label class="live">Live
+      <span class="switch"><input type="checkbox" id="live"><span></span></span>
+    </label>
+  </div>
+</section>
+
+<section class="card">
+  <div class="title"><svg class="ic"><use href="#i-keyboard"/></svg>Keyboard</div>
+  <div class="type-row">
+    <input id="typebox" type="text" placeholder="Type text onto PC" autocomplete="off">
+    <button id="sendtext" class="primary"><svg class="ic"><use href="#i-send"/></svg></button>
+  </div>
+  <div class="keys">
+    <button data-key="enter">Enter</button>
+    <button data-key="esc">Esc</button>
+    <button data-key="backspace">Del</button>
+    <button data-key="tab">Tab</button>
+    <button data-key="up">Up</button>
+    <button data-key="down">Down</button>
+    <button data-key="left">Left</button>
+    <button data-key="right">Right</button>
+  </div>
+  <div class="keys">
+    <button data-hotkey="win+d">Win+D</button>
+    <button data-hotkey="alt+tab">Alt+Tab</button>
+    <button data-hotkey="ctrl+w">Ctrl+W</button>
+    <button data-hotkey="alt+f4">Alt+F4</button>
+  </div>
+</section>
+
+<section class="card">
+  <div class="row between">
+    <div class="title"><svg class="ic"><use href="#i-speaker"/></svg>Volume</div>
+    <div class="value" id="volval">0%</div>
+  </div>
+  <input type="range" id="volume" min="0" max="100" value="0">
+  <div class="steps">
+    <button data-step="-10">-10</button>
+    <button data-step="-2">-2</button>
+    <button data-step="+2">+2</button>
+    <button data-step="+10">+10</button>
+    <button id="mute"><svg class="ic"><use href="#i-mute"/></svg><span>Mute</span></button>
+  </div>
+</section>
+
+<section class="card">
+  <div class="title"><svg class="ic"><use href="#i-power"/></svg>Power</div>
+  <div class="grid">
+    <button data-power="lock"><svg class="ic"><use href="#i-lock"/></svg>Lock</button>
+    <button data-power="sleep"><svg class="ic"><use href="#i-sleep"/></svg>Sleep</button>
+    <button class="danger" data-power="logoff">
+      <svg class="ic"><use href="#i-logoff"/></svg>Logoff</button>
+    <button class="danger" data-power="restart">
+      <svg class="ic"><use href="#i-restart"/></svg>Restart</button>
+    <button class="danger wide" data-power="shutdown">
+      <svg class="ic"><use href="#i-power"/></svg>Shutdown</button>
+  </div>
+</section>
+<script>
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+const $ = (id) => document.getElementById(id);
+const img = $("screen");
+const statusEl = $("status");
+const statusText = $("statusText");
+const volumeEl = $("volume");
+const volvalEl = $("volval");
+const muteEl = $("mute");
+const liveEl = $("live");
+let liveTimer = null;
+
+function haptic() {
+  if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
+}
+function setStatus(text, err) {
+  statusText.textContent = text;
+  statusEl.classList.toggle("err", !!err);
+}
+function headers() {
+  return { "X-Telegram-Init-Data": tg.initData, "Content-Type": "application/json" };
+}
+async function refresh() {
+  try {
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.min(1600, Math.round(window.innerWidth * dpr));
+    const url = "/screen?w=" + w + "&q=70&t=" + Date.now();
+    const res = await fetch(url, { headers: headers(), cache: "no-store" });
+    if (!res.ok) { setStatus("auth " + res.status, true); return; }
+    const blob = await res.blob();
+    const old = img.src;
+    img.src = URL.createObjectURL(blob);
+    if (old) URL.revokeObjectURL(old);
+    setStatus("ready");
+  } catch (e) { setStatus("offline", true); }
+}
+async function loadState() {
+  try {
+    const res = await fetch("/state", { headers: headers() });
+    if (!res.ok) return;
+    const s = await res.json();
+    volumeEl.value = s.volume;
+    volvalEl.textContent = s.volume + "%";
+    muteEl.dataset.muted = s.mute ? "1" : "0";
+    muteEl.querySelector("span").textContent = s.mute ? "Unmute" : "Mute";
+  } catch (e) { /* ignore */ }
+}
+async function post(path, body) {
+  try {
+    const res = await fetch(path, {
+      method: "POST", headers: headers(), body: JSON.stringify(body || {})
+    });
+    if (!res.ok) { setStatus("failed " + res.status, true); return false; }
+    setStatus("done");
+    return true;
+  } catch (e) { setStatus("error", true); return false; }
+}
+img.addEventListener("pointerdown", async (event) => {
+  const rect = img.getBoundingClientRect();
+  const u = (event.clientX - rect.left) / rect.width;
+  const v = (event.clientY - rect.top) / rect.height;
+  if (u < 0 || u > 1 || v < 0 || v > 1) return;
+  haptic();
+  await post("/click", { u: u, v: v });
+  if (!liveEl.checked) setTimeout(refresh, 250);
+});
+volumeEl.addEventListener("input", () => { volvalEl.textContent = volumeEl.value + "%"; });
+volumeEl.addEventListener("change", async () => {
+  await post("/volume", { percent: Number(volumeEl.value) });
+  loadState();
+});
+for (const btn of document.querySelectorAll("[data-step]")) {
+  btn.addEventListener("click", async () => {
+    haptic();
+    const next = Math.max(0, Math.min(100, Number(volumeEl.value) + Number(btn.dataset.step)));
+    volumeEl.value = next;
+    volvalEl.textContent = next + "%";
+    await post("/volume", { percent: next });
+    loadState();
+  });
+}
+muteEl.addEventListener("click", async () => {
+  haptic();
+  await post("/mute");
+  loadState();
+});
+for (const btn of document.querySelectorAll("[data-power]")) {
+  btn.addEventListener("click", async () => {
+    const action = btn.dataset.power;
+    if (!confirm("Confirm: " + action + "?")) return;
+    haptic();
+    await post("/power", { action: action });
+  });
+}
+const typebox = $("typebox");
+async function sendText() {
+  const text = typebox.value;
+  if (!text) return;
+  haptic();
+  if (await post("/type", { text: text })) typebox.value = "";
+}
+$("sendtext").addEventListener("click", sendText);
+typebox.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") { event.preventDefault(); sendText(); }
+});
+for (const btn of document.querySelectorAll("[data-key]")) {
+  btn.addEventListener("click", async () => {
+    haptic();
+    await post("/key", { key: btn.dataset.key });
+  });
+}
+for (const btn of document.querySelectorAll("[data-hotkey]")) {
+  btn.addEventListener("click", async () => {
+    haptic();
+    await post("/hotkey", { combo: btn.dataset.hotkey });
+  });
+}
+liveEl.addEventListener("change", () => {
+  if (liveEl.checked) { liveTimer = setInterval(refresh, 2000); setStatus("live"); }
+  else { clearInterval(liveTimer); liveTimer = null; setStatus("ready"); }
+});
+$("refresh").addEventListener("click", () => { haptic(); refresh(); });
+refresh();
+loadState();
+</script>
+</body>
+</html>
